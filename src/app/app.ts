@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HotToastService } from '@ngxpert/hot-toast';
+import { DataBaseService } from './core/services/dataBase.service';
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
@@ -8,11 +9,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
   styleUrl: './app.scss'
 })
 export class App implements OnInit{
-  constructor(private toast: HotToastService)  {}
-  ngOnInit() {
-    setTimeout(() => {
-      this.toast.error('🎉 HotToast آماده است!');
-    }, 1000);
-  }
-  protected readonly title = signal('ToDoList');
+  constructor(private _toast: HotToastService , private _databaseService: DataBaseService)  {}
+  ngOnInit() {}
 }
