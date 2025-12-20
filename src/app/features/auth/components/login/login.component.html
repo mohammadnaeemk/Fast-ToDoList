@@ -1,0 +1,193 @@
+<!-- افکت ذرات زمینه -->
+<div class="particles-container">
+  <div 
+    *ngFor="let particle of particles; let i = index"
+    class="particle"
+    [style]="{
+      'width.px': particle.size,
+      'height.px': particle.size,
+      'right.%': particle.x,
+      'top.%': particle.y,
+      'animation-duration.s': particle.duration
+    }"
+  ></div>
+</div>
+
+<!-- افکت‌های شناور -->
+<div class="floating-elements">
+  <div 
+    *ngFor="let element of floatingElements"
+    class="floating-element"
+    [style]="{
+      'top': element.top,
+      'left': element.left,
+      'right': element.right,
+      'bottom': element.bottom,
+      'animation-delay': element.delay
+    }"
+  >
+    <span class="text-3xl">{{element.icon}}</span>
+  </div>
+</div>
+
+<div class="min-h-screen bg-gradient-to-bl from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden" dir="rtl">
+  
+  <!-- افکت نور پس‌زمینه آبی -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute -top-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+    <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+  </div>
+
+  <div class="w-full max-w-md z-10">
+    <!-- کارت اصلی -->
+    <div class="glass-card p-8 rounded-3xl shadow-2xl border border-white/10 backdrop-blur-xl">
+      
+      <!-- هدر -->
+      <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-l from-blue-600 to-cyan-500 mb-6 shadow-lg">
+          <span class="text-4xl">📋</span>
+        </div>
+        <h1 class="text-4xl font-bold bg-gradient-to-l from-blue-400 to-cyan-300 bg-clip-text text-transparent mb-3">
+          فست تودو
+        </h1>
+        <p class="text-gray-300 text-lg">
+          به پلتفرم مدیریت کارهایت خوش آمدی
+        </p>
+      </div>
+
+      <!-- فرم -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        
+        <!-- فیلد شناسه -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-300">
+            ایمیل، شماره تلفن یا نام کاربری
+          </label>
+          <div class="relative">
+            <input
+              type="text"
+              formControlName="identifier"
+              placeholder="example@email.com"
+              class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+              [class.border-red-500]="identifier?.invalid && identifier?.touched"
+            />
+            <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              person
+            </mat-icon>
+          </div>
+          <div *ngIf="identifier?.invalid && identifier?.touched" class="text-red-400 text-sm animate-pulse text-right">
+            {{ getInputError('identifier') }}
+          </div>
+        </div>
+
+        <!-- فیلد رمز عبور -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-300">
+            رمز عبور
+          </label>
+          <div class="relative">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="••••••••"
+              class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ps-12 text-right"
+              [class.border-red-500]="password?.invalid && password?.touched"
+            />
+            <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              lock
+            </mat-icon>
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          <div *ngIf="password?.invalid && password?.touched" class="text-red-400 text-sm animate-pulse text-right">
+            {{ getInputError('password') }}
+          </div>
+        </div>
+
+        <!-- گزینه‌های اضافی -->
+        <div class="flex items-center justify-between">
+          <a
+            routerLink="/auth/forgot-password"
+            class="text-sm text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+          >
+            فراموشی رمز عبور؟
+          </a>
+          
+          <label class="flex items-center space-x-2 cursor-pointer group space-x-reverse">
+            <span class="text-gray-300 group-hover:text-white transition-colors">
+              مرا به خاطر بسپار
+            </span>
+            <input
+              type="checkbox"
+              formControlName="rememberMe"
+              class="w-5 h-5 rounded border-gray-600 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+            />
+          </label>
+        </div>
+
+        <!-- دکمه ورود -->
+        <button
+          type="submit"
+          [disabled]="isLoading || loginForm.invalid"
+          class="w-full py-4 px-6 bg-gradient-to-l from-blue-600 to-cyan-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+        >
+          <span class="relative z-10 flex items-center justify-center">
+            <span>{{ isLoading ? 'در حال ورود...' : 'ورود به حساب' }}</span>
+            <mat-icon class="mr-2" *ngIf="!isLoading">login</mat-icon>
+          </span>
+          <div class="absolute inset-0 bg-gradient-to-l from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          <!-- افکت بارگذاری -->
+          <div *ngIf="isLoading" class="absolute inset-0 flex items-center justify-center">
+            <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </button>
+      </form>
+
+      <!-- جداکننده -->
+      <div class="relative my-8">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-700"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-4 bg-gray-900 text-gray-400">حساب کاربری ندارید؟</span>
+        </div>
+      </div>
+
+      <!-- دکمه ثبت‌نام -->
+      <a
+        routerLink="/auth/register"
+        class="block w-full py-3 px-6 border border-blue-500/30 text-blue-400 font-medium rounded-xl text-center hover:bg-blue-500/10 transition-all duration-300 group"
+      >
+        <span class="flex items-center justify-center">
+          <mat-icon class="ml-2 transform group-hover:-translate-x-1 transition-transform">arrow_right</mat-icon>
+          <span>ایجاد حساب جدید</span>
+        </span>
+      </a>
+
+      <!-- فوتر -->
+      <div class="mt-10 pt-6 border-t border-gray-800 text-center">
+        <p class="text-gray-400 text-sm">
+          با ورود، با 
+          <a href="#" class="text-blue-400 hover:text-blue-300 transition-colors">قوانین</a>
+          و 
+          <a href="#" class="text-blue-400 hover:text-blue-300 transition-colors">حریم خصوصی</a>
+          موافقت می‌کنید
+        </p>
+      </div>
+    </div>
+
+    <!-- نسخه موبایل -->
+    <div *ngIf="isMobile" class="mt-6 text-center">
+      <p class="text-gray-400 text-sm">
+        💡 برای تجربه بهتر، اپلیکیشن ما را نصب کنید
+      </p>
+    </div>
+  </div>
+</div>
