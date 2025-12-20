@@ -19,7 +19,6 @@ export class DataBaseService {
         resolve(this.db);
         return;
       }
-
       // باز کردن دیتابیس
       const request = indexedDB.open(this.dbName, this.dbVersion);
 
@@ -97,43 +96,149 @@ export class DataBaseService {
       filesStore.createIndex('name', 'name');
     }
   }
-addItem<T>(storeName: string, item: T): Observable<T & { id: string }> {
-  return from(
-    this.initialize().then((db) => {
-      return new Promise<T & { id: string }>((resolve, reject) => {
-        const transaction = db.transaction(storeName, 'readwrite');
+  addItem<T>(storeName: string, item: T): Observable<T & { id: string }> {
+    return from(
+      this.initialize().then((db) => {
+        return new Promise<T & { id: string }>((resolve, reject) => {
+          const transaction = db.transaction(storeName, 'readwrite');
+          const store = transaction.objectStore(storeName);
+
+          const itemWithId = {
+            ...item,
+            id: (item as any).id || this.generateId(),
+          } as T & { id: string };
+
+          const request = store.add(itemWithId);
+
+          request.onsuccess = () => {
+            resolve(itemWithId);
+          };
+
+          request.onerror = (event) => {
+            const error = (event.target as IDBRequest).error;
+            if (error?.name === 'ConstraintError') {
+              reject(new Error('این آیتم قبلاً ذخیره شده است'));
+            } else {
+              reject(new Error(`خطا در ذخیره: ${error?.message || 'خطای ناشناخته'}`));
+            }
+          };
+        });
+      })
+    ).pipe(
+      catchError((error) => {
+        console.error('خطا در اضافه کردن آیتم:', error);
+        throw error;
+      })
+    );
+  }
+
+  getAllItems<T>(storeName: string): Promise<T[]> {
+    return this.initialize().then((db) => {
+      return new Promise<T[]>((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readonly');
         const store = transaction.objectStore(storeName);
-        
-        // اضافه کردن id اگر وجود نداشت
-        const itemWithId = {
-          ...item,
-          id: (item as any).id || this.generateId()
-        } as T & { id: string };
-        
-        const request = store.add(itemWithId);
-        
+        const request = store.getAll();
+
         request.onsuccess = () => {
-          resolve(itemWithId);
+          resolve(request.result || []);
         };
-        
+
         request.onerror = (event) => {
-          const error = (event.target as IDBRequest).error;
-          if (error?.name === 'ConstraintError') {
-            reject(new Error('این آیتم قبلاً ذخیره شده است'));
-          } else {
-            reject(new Error(`خطا در ذخیره: ${error?.message || 'خطای ناشناخته'}`));
-          }
+          reject(new Error(`خطا در دریافت آیتم‌ها: ${event}`));
         };
       });
-    })
-  ).pipe(
-    catchError((error) => {
-      console.error('خطا در اضافه کردن آیتم:', error);
-      throw error;
-    })
-  );
-}
+    });
+  }
 
+  getItem<T>(storeName: string, id: string): Promise<T | null> {
+    return this.initialize().then((db) => {
+      return new Promise<T | null>((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.get(id);
+
+        request.onsuccess = () => {
+          resolve(request.result || null);
+        };
+
+        request.onerror = (event) => {
+          reject(new Error(`خطا در دریافت آیتم: ${event}`));
+        };
+      });
+    });
+  }
+
+  updateItem<T>(storeName: string, id: string, updates: Partial<T>): Promise<T> {
+    return this.initialize().then((db) => {
+      return new Promise<T>((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        // اول آیتم رو می‌گیریم
+        const getRequest = store.get(id);
+
+        getRequest.onsuccess = () => {
+          const item = getRequest.result;
+          if (!item) {
+            reject(new Error('آیتم یافت نشد'));
+            return;
+          }
+
+          // آپدیت می‌کنیم
+          const updatedItem = { ...item, ...updates };
+          const putRequest = store.put(updatedItem);
+
+          putRequest.onsuccess = () => {
+            resolve(updatedItem);
+          };
+
+          putRequest.onerror = (event) => {
+            reject(new Error(`خطا در آپدیت آیتم: ${event}`));
+          };
+        };
+
+        getRequest.onerror = (event) => {
+          reject(new Error(`خطا در دریافت آیتم: ${event}`));
+        };
+      });
+    });
+  }
+
+  deleteItem(storeName: string, id: string): Promise<boolean> {
+    return this.initialize().then((db) => {
+      return new Promise<boolean>((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.delete(id);
+
+        request.onsuccess = () => {
+          resolve(true);
+        };
+
+        request.onerror = (event) => {
+          reject(new Error(`خطا در حذف آیتم: ${event}`));
+        };
+      });
+    });
+  }
+
+  clearStore(storeName: string): Promise<boolean> {
+    return this.initialize().then((db) => {
+      return new Promise<boolean>((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.clear();
+
+        request.onsuccess = () => {
+          resolve(true);
+        };
+
+        request.onerror = (event) => {
+          reject(new Error(`خطا در پاک کردن store: ${event}`));
+        };
+      });
+    });
+  }
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
   }
