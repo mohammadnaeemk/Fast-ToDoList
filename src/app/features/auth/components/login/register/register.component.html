@@ -1,0 +1,446 @@
+<!-- افکت ذرات زمینه -->
+<div class="particles-container">
+  <div
+    *ngFor="let particle of particles; let i = index"
+    class="particle"
+    [style]="{
+      'width.px': particle.size,
+      'height.px': particle.size,
+      'right.%': particle.x,
+      'top.%': particle.y,
+      'animation-duration.s': particle.duration
+    }"
+  ></div>
+</div>
+
+<!-- افکت‌های شناور -->
+<div class="floating-elements">
+  <div
+    *ngFor="let element of floatingElements"
+    class="floating-element"
+    [style]="{
+      top: element.top,
+      left: element.left,
+      right: element.right,
+      bottom: element.bottom,
+      'animation-delay': element.delay
+    }"
+  >
+    <span class="text-3xl">{{ element.icon }}</span>
+  </div>
+</div>
+
+<div
+  class="min-h-screen bg-gradient-to-bl from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden"
+  dir="rtl"
+>
+  <!-- افکت نور پس‌زمینه آبی -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div
+      class="absolute -top-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"
+    ></div>
+    <div
+      class="absolute -bottom-40 -right-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"
+    ></div>
+    <div
+      class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"
+    ></div>
+  </div>
+
+  <div class="w-full max-w-2xl z-10">
+    <!-- کارت اصلی -->
+    <div class="glass-card p-8 rounded-3xl shadow-2xl border border-white/10 backdrop-blur-xl">
+      <!-- هدر -->
+      <div class="text-center mb-10">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-l from-blue-600 to-cyan-500 mb-6 shadow-lg"
+        >
+          <span class="text-4xl">👤</span>
+        </div>
+        <h1
+          class="text-4xl font-bold bg-gradient-to-l from-blue-400 to-cyan-300 bg-clip-text text-transparent mb-3"
+        >
+          ایجاد حساب جدید
+        </h1>
+        <p class="text-gray-300 text-lg">برای شروع مدیریت کارهایت، حساب کاربری بساز</p>
+      </div>
+
+      <!-- نمایش مراحل -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2 space-x-reverse">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-l from-blue-600 to-cyan-500 text-white font-bold shadow-lg"
+              [class.opacity-50]="currentStep < 1"
+            >
+              ۱
+            </div>
+            <span class="text-gray-300" [class.text-blue-300]="currentStep === 1"
+              >اطلاعات شخصی</span
+            >
+          </div>
+
+          <div class="h-1 flex-1 mx-4 bg-gray-700 rounded-full">
+            <div
+              class="h-full bg-gradient-to-l from-blue-600 to-cyan-500 rounded-full transition-all duration-500"
+              [style.width.%]="currentStep === 2 ? 100 : 0"
+            ></div>
+          </div>
+
+          <div class="flex items-center space-x-2 space-x-reverse">
+            <span class="text-gray-300" [class.text-blue-300]="currentStep === 2">رمز عبور</span>
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-l from-blue-600 to-cyan-500 text-white font-bold shadow-lg"
+              [class.opacity-50]="currentStep < 2"
+            >
+              ۲
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- فرم -->
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-8">
+        <!-- Step 1: اطلاعات شخصی -->
+        <div *ngIf="currentStep === 1" class="space-y-6 animate-fade-in">
+          <!-- نام کاربری -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-300">
+              نام کاربری
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                type="text"
+                formControlName="userName"
+                [formControl]="userName"
+                placeholder="نام کاربری خود را وارد کنید"
+                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                [class.border-blue-500]="userName?.valid && userName?.touched"
+                [class.border-red-500]="userName?.invalid && userName?.touched"
+              />
+              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                badge
+              </mat-icon>
+              <div
+                *ngIf="userName?.touched"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2"
+              >
+                <mat-icon class="text-green-500" *ngIf="userName?.valid">check_circle</mat-icon>
+                <mat-icon class="text-red-500" *ngIf="userName?.invalid">error</mat-icon>
+              </div>
+            </div>
+            <div
+              *ngIf="userName?.invalid && userName?.touched"
+              class="text-red-400 text-sm animate-pulse text-right"
+            >
+              {{ getErrorMessage(userName) }}
+            </div>
+          </div>
+
+          <!-- ایمیل -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-300">
+              ایمیل
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                type="email"
+                formControlName="email"
+                [formControl]="email"
+                placeholder="example@email.com"
+                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                [class.border-blue-500]="email?.valid && email?.touched"
+                [class.border-red-500]="email?.invalid && email?.touched"
+                (blur)="validateEmail()"
+              />
+              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                email
+              </mat-icon>
+              <div
+                *ngIf="email?.touched"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2"
+              >
+                <mat-icon class="text-green-500" *ngIf="email?.valid">check_circle</mat-icon>
+                <mat-icon class="text-red-500" *ngIf="email?.invalid">error</mat-icon>
+              </div>
+            </div>
+            <div
+              *ngIf="email?.invalid && email?.touched"
+              class="text-red-400 text-sm animate-pulse text-right"
+            >
+              {{ getErrorMessage(email) }}
+            </div>
+          </div>
+
+          <!-- شماره تلفن (اختیاری) -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-300">
+              شماره تلفن <span class="text-gray-500 text-sm">(اختیاری)</span>
+            </label>
+            <div class="relative">
+              <input
+                type="number"
+                formControlName="phoneNumber"
+                [formControl]="phoneNumber"
+                placeholder="09123456789"
+                appPersianInput
+                type="phone"
+                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                [class.border-blue-500]="phoneNumber?.valid && phoneNumber?.touched"
+                [class.border-red-500]="phoneNumber?.invalid && phoneNumber?.touched"
+              />
+              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                phone
+              </mat-icon>
+            </div>
+            <div
+              *ngIf="phoneNumber?.invalid && phoneNumber?.touched"
+              class="text-red-400 text-sm animate-pulse text-right"
+            >
+              {{ getErrorMessage(phoneNumber) }}
+            </div>
+          </div>
+
+          <!-- دکمه ادامه -->
+          <div class="pt-4">
+            <button
+              type="button"
+              (click)="nextStep()"
+              [disabled]="personalInfo.invalid"
+              class="w-full py-4 px-6 bg-gradient-to-l from-blue-600 to-cyan-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+            >
+              <span class="relative z-10 flex items-center justify-center">
+                <span>ادامه</span>
+                <mat-icon class="mr-2">arrow_left</mat-icon>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: رمز عبور -->
+        <div *ngIf="currentStep === 2" class="space-y-6 animate-fade-in">
+          <!-- رمز عبور -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-300">
+              رمز عبور
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="حداقل ۶ کاراکتر با ترکیب حروف و اعداد"
+                appPasswordStrength
+                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                [class.border-blue-500]="password?.valid && password?.touched"
+                [class.border-red-500]="password?.invalid && password?.touched"
+              />
+              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                lock
+              </mat-icon>
+              <button
+                type="button"
+                (click)="togglePasswordVisibility('password')"
+                class="absolute left-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              >
+                <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+
+              <!-- نشانگر قدرت رمز عبور -->
+              <div
+                *ngIf="password?.value"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2"
+              >
+                <div class="relative" [matTooltip]="getPasswordStrength(password?.value).strength">
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center"
+                    [style.background]="
+                      'conic-gradient(' +
+                      getStrengthColor(getPasswordStrength(password?.value).strength) +
+                      ' ' +
+                      getPasswordStrength(password?.value).percentage +
+                      '%, #374151 ' +
+                      getPasswordStrength(password?.value).percentage +
+                      '%)'
+                    "
+                  >
+                    <div class="w-6 h-6 rounded-full bg-gray-900"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- نوار قدرت رمز عبور -->
+            <div *ngIf="password?.value" class="pt-2">
+              <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  class="h-full transition-all duration-500"
+                  [style.width.%]="getPasswordStrength(password?.value).percentage"
+                  [style.background]="
+                    getStrengthColor(getPasswordStrength(password?.value).strength)
+                  "
+                ></div>
+              </div>
+              <div class="flex justify-between text-xs text-gray-400 mt-1">
+                <span>ضعیف</span>
+                <span>متوسط</span>
+                <span>قوی</span>
+              </div>
+            </div>
+
+            <div
+              *ngIf="password?.invalid && password?.touched"
+              class="text-red-400 text-sm animate-pulse text-right"
+            >
+              {{ getErrorMessage(password) }}
+            </div>
+          </div>
+
+          <!-- تأیید رمز عبور -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-300">
+              تأیید رمز عبور
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                [formControl]="confirmPassword"
+                placeholder="تکرار رمز عبور"
+                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                [class.border-blue-500]="confirmPassword?.valid && confirmPassword?.touched"
+                [class.border-red-500]="confirmPassword?.invalid && confirmPassword?.touched"
+              />
+              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                lock_reset
+              </mat-icon>
+              <button
+                type="button"
+                (click)="togglePasswordVisibility('confirmPassword')"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              >
+                <mat-icon>{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+
+              <!-- آیکون تطابق -->
+              <div
+                *ngIf="confirmPassword?.touched"
+                class="absolute left-12 top-1/2 transform -translate-y-1/2"
+              >
+                <mat-icon
+                  class="text-green-500"
+                  *ngIf="securityInfo.valid && password?.value === confirmPassword?.value"
+                  >check_circle</mat-icon
+                >
+                <mat-icon class="text-red-500" *ngIf="securityInfo.hasError('passwordMismatch')"
+                  >error</mat-icon
+                >
+              </div>
+            </div>
+            <div
+              *ngIf="confirmPassword?.invalid && confirmPassword?.touched"
+              class="text-red-400 text-sm animate-pulse text-right"
+            >
+              {{ getErrorMessage(confirmPassword) }}
+            </div>
+          </div>
+
+          <!-- شرایط و ضوابط -->
+          <div class="pt-4 space-y-4">
+            <div class="bg-white/5 rounded-xl p-4 border border-gray-700">
+              <label class="flex items-start space-x-3 space-x-reverse cursor-pointer group">
+                <input
+                  type="checkbox"
+                  formControlName="acceptTerms"
+                  class="mt-1 w-5 h-5 rounded border-gray-600 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+                />
+                <div class="flex-1">
+                  <span class="text-gray-300 group-hover:text-white transition-colors">
+                    با شرایط و ضوابط موافقت می‌کنم
+                  </span>
+                  <p class="text-gray-400 text-sm mt-2 leading-relaxed">
+                    با ایجاد حساب کاربری، با
+                    <a
+                      href="#"
+                      class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                      >قوانین استفاده</a
+                    >،
+                    <a
+                      href="#"
+                      class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                      >حریم خصوصی</a
+                    >
+                    و
+                    <a
+                      href="#"
+                      class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                      >سیاست بازگشت وجه</a
+                    >
+                    موافقت می‌کنم. اطلاعات شخصی شما با امنیت کامل ذخیره می‌شود.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div
+              *ngIf="
+                registerForm.get('acceptTerms')?.invalid && registerForm.get('acceptTerms')?.touched
+              "
+              class="text-red-400 text-sm animate-pulse text-right"
+            >
+              برای ادامه باید شرایط و ضوابط را بپذیرید
+            </div>
+          </div>
+
+          <!-- دکمه‌های ناوبری -->
+          <div class="flex space-x-4 space-x-reverse pt-4">
+            <button
+              type="button"
+              (click)="prevStep()"
+              class="flex-1 py-4 px-6 border border-gray-600 text-gray-300 font-medium rounded-xl hover:bg-white/5 transition-all duration-300 group"
+            >
+              <span class="flex items-center justify-center">
+                <mat-icon class="ml-2">arrow_right</mat-icon>
+                <span>بازگشت</span>
+              </span>
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="isLoading || registerForm.invalid"
+              class="flex-1 py-4 px-6 bg-gradient-to-l from-blue-600 to-cyan-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+            >
+              <span class="relative z-10 flex items-center justify-center">
+                <span>{{ isLoading ? 'در حال ایجاد حساب...' : 'ایجاد حساب' }}</span>
+                <mat-icon class="mr-2" *ngIf="!isLoading">person_add</mat-icon>
+              </span>
+
+              <!-- افکت بارگذاری -->
+              <div *ngIf="isLoading" class="absolute inset-0 flex items-center justify-center">
+                <div
+                  class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
+                ></div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- لینک ورود -->
+      <div class="mt-10 pt-6 border-t border-gray-800 text-center">
+        <p class="text-gray-400">
+          قبلاً حساب کاربری دارید؟
+          <a
+            routerLink="/auth/login"
+            class="text-blue-400 hover:text-blue-300 transition-colors hover:underline font-medium"
+          >
+            وارد شوید
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

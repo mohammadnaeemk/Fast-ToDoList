@@ -11,11 +11,11 @@ export const AUTH_ROUTES: Routes = [
     loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent),
     title: 'ورود به برنامه'
   },
-//   {
-//     path: 'register',
-//     loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent),
-//     title: 'ثبت‌نام'
-//   },
+  {
+    path: 'register',
+    loadComponent: () => import('./components/login/register/register.component').then(m => m.RegisterComponent),
+    title: 'ثبت‌نام'
+  },
 //   {
 //     path: 'forgot-password',
 //     loadComponent: () => import('./components/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),

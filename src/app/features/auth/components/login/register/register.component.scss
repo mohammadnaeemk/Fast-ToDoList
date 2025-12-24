@@ -1,0 +1,421 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  direction: rtl;
+}
+
+// افکت ذرات زمینه آبی
+.particles-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+  border-radius: 50%;
+  animation: floatParticle infinite linear;
+  
+  &:nth-child(odd) {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(56, 189, 248, 0.2));
+  }
+}
+
+// افکت شیشه‌ای
+.glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  
+  &:hover {
+    box-shadow: 
+      0 35px 60px -15px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+  }
+}
+
+// افکت‌های شناور
+.floating-elements {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.floating-element {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  animation: floatElement 8s ease-in-out infinite;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition: all 0.4s ease;
+  }
+}
+
+// انیمیشن‌ها
+@keyframes floatParticle {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-1000px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes floatElement {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-25px) rotate(-3deg);
+  }
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(-30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+// استایل‌های فرم RTL
+input, textarea {
+  &::placeholder {
+    transition: opacity 0.3s ease;
+    text-align: right;
+    color: rgba(156, 163, 175, 0.7);
+  }
+  
+  &:focus::placeholder {
+    opacity: 0.5;
+  }
+  
+  &:focus {
+    box-shadow: 
+      0 0 0 3px rgba(59, 130, 246, 0.15),
+      inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// دکمه‌ها با افکت
+button {
+  &:not(:disabled) {
+    &:active {
+      transform: translateY(1px) scale(0.98) !important;
+    }
+    
+    &.gradient-button {
+      position: relative;
+      overflow: hidden;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: linear-gradient(45deg, 
+          transparent 25%, 
+          rgba(255, 255, 255, 0.1) 25%, 
+          rgba(255, 255, 255, 0.1) 50%, 
+          transparent 50%, 
+          transparent 75%, 
+          rgba(255, 255, 255, 0.1) 75%
+        );
+        background-size: 40px 40px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      &:hover::before {
+        opacity: 0.3;
+        animation: shimmer 2s infinite linear;
+      }
+    }
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 40px 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+// ریسپانسیو
+@media (max-width: 768px) {
+  .glass-card {
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .floating-element {
+    width: 50px;
+    height: 50px;
+    display: none;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+  
+  .step-indicator {
+    flex-direction: column;
+    gap: 1rem;
+    
+    .step-line {
+      width: 1px;
+      height: 2rem;
+      margin: 0 auto;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  :host {
+    padding: 0.5rem;
+  }
+  
+  .glass-card {
+    padding: 1.25rem;
+  }
+  
+  input, button {
+    font-size: 16px; // جلوگیری از zoom در iOS
+  }
+}
+
+// دارک مود Material
+:host-context(.dark) {
+  .glass-card {
+    background: rgba(2, 6, 23, 0.9);
+  }
+  
+  input {
+    background: rgba(255, 255, 255, 0.03);
+    
+    &:focus {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+}
+
+// اسکرول بار سفارشی
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #3b82f6, #06b6d4);
+  border-radius: 10px;
+  border: 2px solid rgba(15, 23, 42, 0.9);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #2563eb, #0891b2);
+}
+
+// لودینگ
+.loading-spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// افکت نور آبی
+.glow-effect {
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    left: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+      #3b82f6 0%, 
+      #06b6d4 25%, 
+      #0ea5e9 50%, 
+      #3b82f6 75%, 
+      #06b6d4 100%
+    );
+    background-size: 400% 400%;
+    border-radius: inherit;
+    z-index: -1;
+    filter: blur(12px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    animation: gradientFlow 3s ease infinite;
+  }
+  
+  &:hover::after {
+    opacity: 0.6;
+  }
+}
+
+@keyframes gradientFlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+// استایل‌های متن RTL
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+// استایل مخصوص Material در RTL
+.mat-icon {
+  transform: scaleX(-1);
+}
+
+// ترتیب flex در RTL
+.space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+// gradient direction برای RTL
+.bg-gradient-to-l {
+  background-image: linear-gradient(to left, var(--tw-gradient-stops));
+}
+
+// استایل placeholder RTL
+::placeholder {
+  text-align: right;
+}
+
+// استایل progress circle
+.conic-gradient {
+  mask: radial-gradient(transparent 55%, black 56%);
+  -webkit-mask: radial-gradient(transparent 55%, black 56%);
+}
+
+// استایل‌های validation
+.border-valid {
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.border-invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.2);
+}
+
+// Helper function برای رنگ قدرت رمز عبور
+@function getStrengthColor($strength) {
+  @if $strength == 'ضعیف' {
+    @return #ef4444;
+  } @else if $strength == 'متوسط' {
+    @return #f59e0b;
+  } @else {
+    @return #10b981;
+  }
+}
+
+// استایل tooltip سفارشی
+.mat-tooltip {
+  font-family: 'Vazirmatn', sans-serif !important;
+  font-size: 12px !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(10px) !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
