@@ -5,6 +5,78 @@
 @tailwind components;
 @tailwind utilities;
 
+// Dark mode glass effect for toast
+::ng-deep .hot-toast {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 1rem !important;
+  padding: 1rem 1.25rem !important;
+  
+  .hot-toast-message {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 500 !important;
+  }
+  
+  .hot-toast-icon {
+    filter: brightness(1.1);
+  }
+  
+  &.hot-toast-success {
+    border-left: 4px solid #10b981 !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    
+    .hot-toast-icon {
+      color: #10b981 !important;
+    }
+  }
+  
+  &.hot-toast-error {
+    border-left: 4px solid #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    
+    .hot-toast-icon {
+      color: #ef4444 !important;
+    }
+  }
+  
+  &.hot-toast-warning {
+    border-left: 4px solid #f59e0b !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+    
+    .hot-toast-icon {
+      color: #f59e0b !important;
+    }
+  }
+  
+  &.hot-toast-info {
+    border-left: 4px solid #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    
+    .hot-toast-icon {
+      color: #3b82f6 !important;
+    }
+  }
+  
+  .hot-toast-close-btn {
+    color: rgba(255, 255, 255, 0.6) !important;
+    opacity: 0.8;
+    transition: all 0.2s ease !important;
+    
+    &:hover {
+      opacity: 1;
+      color: rgba(255, 255, 255, 1) !important;
+      transform: scale(1.1);
+    }
+  }
+}
+
 html {
   @include mat.theme((
     color: (

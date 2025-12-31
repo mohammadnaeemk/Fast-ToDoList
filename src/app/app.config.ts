@@ -20,13 +20,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimations(),
     importProvidersFrom(MaterialModule),
-    provideHotToastConfig(),
     provideHotToastConfig({
-      position: 'top-right',
+      position: 'top-center',
       duration: 4000,
       autoClose: true,
       dismissible: true,
-      theme: 'toast',
+      theme: 'snackbar',
       style: {
         textDirection: 'rtl',
         fontFamily: 'Vazirmatn, Tahoma, sans-serif',

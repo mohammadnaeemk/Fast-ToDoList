@@ -11,6 +11,9 @@ import {
   PublicUserInfo,
   RegisterRequest,
   User,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
 } from '../../shared/models/auth.models';
 import { DataBaseService } from './dataBase.service';
 import { ValidationResult } from '../../shared/models/shared.types';
@@ -38,89 +41,62 @@ export class AuthService {
     this.loadCurrentUser();
   }
 
+  /**
+   * ثبت‌نام کاربر جدید
+   * این متد یک کاربر جدید در سیستم ایجاد می‌کند و توکن احراز هویت را برمی‌گرداند
+   * @param data اطلاعات ثبت‌نام کاربر (نام کاربری، ایمیل، شماره تلفن و رمز عبور)
+   * @returns Observable که AuthResponse را برمی‌گرداند
+   */
 register(data: RegisterRequest): Observable<AuthResponse> {
-  return of(null).pipe(
-    // ۱. اعتبارسنجی داده‌ها
-    switchMap(() => {
-      const validation = this.validateRegisterData(data);
-      if (!validation.valid) {
-        // به جای throwError، یه observable با خطا برمی‌گردونیم
-        return of({
-          success: false,
-          message: validation.message!
-        } as AuthResponse);
+  return from(
+    this.initializeRegistration(data)
+  ).pipe(
+    switchMap(result => {
+      // اگر خطایی در initializeRegistration بود، برگردانش
+      if (result && 'success' in result && !result.success) {
+        return of(result as AuthResponse);
       }
-      return of(null);
-    }),
-    
-    // ۲. بررسی وجود کاربر
-    switchMap(() => {
-      return this.checkUserExists(data).pipe(
-        switchMap(userExists => {
-          if (userExists) {
-            return of({
-              success: false,
-              message: 'کاربر با این مشخصات قبلاً ثبت‌نام کرده است'
-            } as AuthResponse);
-          }
-          return of(null);
+      
+      // در غیر این صورت، ساخت کاربر را ادامه بده
+      const userData = data as RegisterRequest;
+      return this.createUser(userData).pipe(
+        switchMap(user => {
+          const token = this.tokenService.generateToken(
+            user.id,
+            user.email,
+            user.userName,
+            user.phonNumber
+          );
+          
+          return this.sessionService.createSession({
+            userId: user.id,
+            token,
+            rememberMe: false
+          }).pipe(
+            map(session => ({ 
+              success: true, 
+              user, 
+              token, 
+              session 
+            }))
+          );
         })
       );
     }),
-    
-    // ۳. اگر تا اینجا خطا داشتیم، ادامه نده
-    switchMap((result: any) => {
-      if (result && result.success === false) {
-        return of(result); // خطا رو برگردون
-      }
-      return this.createUser(data);
-    }),
-    
-    // ۴. اگر کاربر ساخته شد، ادامه بده
-    switchMap((result: any) => {
-      // اگر result یه AuthResponse باشه (یعنی خطا داره)
-      if (result && result.success === false) {
-        return of(result);
-      }
-      
-      // در غیر این صورت result یه User هست
-      const user = result as User;
-      const token = this.tokenService.generateToken(
-        user.id,
-        user.email,
-        user.userName,
-        user.phonNumber
-      );
-      
-      return this.sessionService.createSession({
-        userId: user.id,
-        token,
-        rememberMe: false
-      }).pipe(
-        map(session => ({ user, token, session }))
-      );
-    }),
-    
-    // ۵. اگر تا اینجا موفق بودیم، ذخیره کن
     tap((result: any) => {
-      // فقط اگر success: true نداره (یعنی هنوز خطا نیومده)
-      if (!result || result.success !== false) {
-        const { user, token } = result as { user: User; token: string; session: Session };
+      if (result.success === true) {
+        const { user, token } = result;
         this.tokenService.saveToken(token);
         this.setCurrentUser(user);
         this.createDefaultSettings(user.id);
       }
     }),
-    
-    // ۶. ساخت پاسخ نهایی
     map((result: any) => {
-      // اگر خطا داشتیم
-      if (result && result.success === false) {
+      if (result.success === false) {
         return result as AuthResponse;
       }
       
-      // اگر موفق بودیم
-      const { user, token, session } = result as { user: User; token: string; session: Session };
+      const { user, token, session } = result;
       return this.createAuthResponse(
         true,
         'ثبت‌نام موفقیت‌آمیز بود',
@@ -129,12 +105,35 @@ register(data: RegisterRequest): Observable<AuthResponse> {
         session.id
       );
     }),
-    
     catchError(error => {
       console.error('خطا در ثبت‌نام:', error);
       return of(this.createAuthResponse(false, error.message || 'خطا در ثبت‌نام'));
     })
   );
+}
+private initializeRegistration(data: RegisterRequest): Promise<AuthResponse | null> {
+  return new Promise((resolve) => {
+    // 1. اعتبارسنجی داده‌های ورودی
+    const validation = this.validateRegisterData(data);
+    if (!validation.valid) {
+      resolve(this.createAuthResponse(false, validation.message!));
+      return;
+    }
+
+    // 2. بررسی وجود کاربر
+    this.checkUserExists(data).subscribe({
+      next: (userExists) => {
+        if (userExists) {
+          resolve(this.createAuthResponse(false, 'کاربر با این مشخصات قبلاً ثبت‌نام کرده است'));
+          return;
+        }
+        resolve(null); // همه چیز درست است
+      },
+      error: () => {
+        resolve(this.createAuthResponse(false, 'خطا در بررسی اطلاعات کاربر'));
+      }
+    });
+  });
 }
 
 
@@ -146,7 +145,7 @@ register(data: RegisterRequest): Observable<AuthResponse> {
       // ۱. پیدا کردن کاربر
       switchMap(() => this.findUserByIdentifier(data.identifier)),
 
-      // ۲. بررسی وجود کاربر
+      // 2. بررسی وجود کاربر
       switchMap((user) => {
         if (!user) {
           return throwError(() => new Error('نام کاربری، ایمیل یا شماره تلفن یافت نشد'));
@@ -154,7 +153,7 @@ register(data: RegisterRequest): Observable<AuthResponse> {
         return of(user);
       }),
 
-      // ۳. بررسی رمز عبور
+      // 3. بررسی رمز عبور
       switchMap((user) => {
         if (!this.verifyPassword(data.password, user.passwordHash)) {
           return throwError(() => new Error('رمز عبور اشتباه است'));
@@ -162,7 +161,7 @@ register(data: RegisterRequest): Observable<AuthResponse> {
         return of(user);
       }),
 
-      // ۴. ساخت توکن و session
+      // 4. ساخت توکن و session
       switchMap((user) => {
         const token = this.tokenService.generateToken(
           user.id,
@@ -180,18 +179,18 @@ register(data: RegisterRequest): Observable<AuthResponse> {
           .pipe(map((session) => ({ user, token, session })));
       }),
 
-      // ۵. آپدیت آخرین ورود
+      // 5. آپدیت آخرین ورود
       switchMap(({ user, token, session }) => {
         return this.updateUserLastLogin(user.id).pipe(map(() => ({ user, token, session })));
       }),
 
-      // ۶. ذخیره کاربر فعلی
+      // 6. ذخیره کاربر فعلی
       tap(({ user, token }) => {
         this.tokenService.saveToken(token);
         this.setCurrentUser(user);
       }),
 
-      // ۷. ساخت پاسخ
+      // 7. ساخت پاسخ
       map(({ user, token, session }) =>
         this.createAuthResponse(true, 'ورود موفقیت‌آمیز بود', user, token, session.id)
       ),
@@ -445,7 +444,7 @@ register(data: RegisterRequest): Observable<AuthResponse> {
     if (data.password.length < 6) {
       return {
         valid: false,
-        message: 'رمز عبور باید حداقل ۶ کاراکتر باشد',
+        message: 'رمز عبور باید حداقل 6 کاراکتر باشد',
       };
     }
 
@@ -611,5 +610,221 @@ register(data: RegisterRequest): Observable<AuthResponse> {
 
     this.tokenService.saveToken(newToken);
     return of(newToken);
+  }
+
+  // ==================== 🔐 فراموشی و بازنشانی رمز عبور ====================
+
+  /**
+   * درخواست فراموشی رمز عبور
+   * این متد یک توکن بازنشانی برای کاربر ایجاد می‌کند
+   */
+  forgotPassword(data: ForgotPasswordRequest): Observable<ForgotPasswordResponse> {
+    return of(null).pipe(
+      // 1. پیدا کردن کاربر با شناسه (ایمیل، شماره تلفن یا نام کاربری)
+      switchMap(() => this.findUserByIdentifier(data.identifier)),
+
+      // 2. بررسی وجود کاربر
+      switchMap((user) => {
+        if (!user) {
+          return of({
+            success: false,
+            message: 'کاربری با این مشخصات یافت نشد'
+          } as ForgotPasswordResponse);
+        }
+
+        // 3. ایجاد توکن بازنشانی رمز عبور
+        const resetToken = this.generateResetToken();
+        const resetTokenExpiry = new Date();
+        resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // توکن 1 ساعت اعتبار دارد
+
+        // 4. ذخیره توکن در اطلاعات کاربر
+        return this.updateUserResetToken(user.id, resetToken, resetTokenExpiry).pipe(
+          map(() => ({
+            success: true,
+            message: 'لینک بازنشانی رمز عبور برای شما ارسال شد',
+            resetToken: resetToken // در واقعیت، این توکن باید از طریق ایمیل ارسال شود
+          } as ForgotPasswordResponse))
+        );
+      }),
+
+      catchError((error) => {
+        console.error('خطا در درخواست فراموشی رمز عبور:', error);
+        return of({
+          success: false,
+          message: error.message || 'خطا در درخواست فراموشی رمز عبور'
+        } as ForgotPasswordResponse);
+      })
+    );
+  }
+
+  /**
+   * بازنشانی رمز عبور با استفاده از توکن
+   */
+  resetPassword(data: ResetPasswordRequest): Observable<AuthResponse> {
+    return of(null).pipe(
+      // 1. اعتبارسنجی رمز عبور جدید
+      switchMap(() => {
+        const validation = this.validateResetPasswordData(data);
+        if (!validation.valid) {
+          return of({
+            success: false,
+            message: validation.message || 'رمز عبور نامعتبر است'
+          } as AuthResponse);
+        }
+        return of(null);
+      }),
+
+      // 2. پیدا کردن کاربر با توکن بازنشانی
+      switchMap(() => this.findUserByResetToken(data.resetToken)),
+
+      // 3. بررسی وجود کاربر و اعتبار توکن
+      switchMap((user: User | null) => {
+        if (!user) {
+          return of({
+            success: false,
+            message: 'توکن بازنشانی نامعتبر یا منقضی شده است'
+          } as AuthResponse);
+        }
+
+        if (!user.resetTokenExpiry || new Date() > user.resetTokenExpiry) {
+          return of({
+            success: false,
+            message: 'توکن بازنشانی منقضی شده است. لطفاً دوباره درخواست دهید'
+          } as AuthResponse);
+        }
+
+        if (user.resetToken !== data.resetToken) {
+          return of({
+            success: false,
+            message: 'توکن بازنشانی نامعتبر است'
+          } as AuthResponse);
+        }
+
+        // اگر همه چیز درست بود، ادامه می‌دهیم با user
+        const newPasswordHash = this.hashPassword(data.newPassword);
+        
+        // 4. به‌روزرسانی رمز عبور و پاک کردن توکن
+        return this.updateUserPassword(user.id, newPasswordHash).pipe(
+          switchMap(() => this.clearUserResetToken(user.id)),
+          map(() => user)
+        );
+      }),
+
+      // 5. ساخت پاسخ موفقیت‌آمیز
+      map((result: User | AuthResponse) => {
+        // اگر result یک AuthResponse باشد (یعنی خطا داشتیم)
+        if ('success' in result && !result.success) {
+          return result as AuthResponse;
+        }
+        // در غیر این صورت موفق بودیم
+        return this.createAuthResponse(
+          true,
+          'رمز عبور شما با موفقیت تغییر کرد. لطفاً با رمز عبور جدید وارد شوید'
+        );
+      }),
+
+      catchError((error) => {
+        console.error('خطا در بازنشانی رمز عبور:', error);
+        return of({
+          success: false,
+          message: error.message || 'خطا در بازنشانی رمز عبور'
+        } as AuthResponse);
+      })
+    );
+  }
+
+  /**
+   * پیدا کردن کاربر با توکن بازنشانی
+   */
+  private findUserByResetToken(resetToken: string): Observable<User | null> {
+    return from(this.databaseService.getAllItems<User>(this.USER_STORE)).pipe(
+      map((users) => {
+        return users.find(user => user.resetToken === resetToken) || null;
+      }),
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * به‌روزرسانی توکن بازنشانی در اطلاعات کاربر
+   */
+  private updateUserResetToken(
+    userId: string,
+    resetToken: string,
+    expiry: Date
+  ): Observable<User> {
+    return from(
+      this.databaseService.updateItem<User>(this.USER_STORE, userId, {
+        resetToken,
+        resetTokenExpiry: expiry,
+      })
+    );
+  }
+
+  /**
+   * به‌روزرسانی رمز عبور کاربر
+   */
+  private updateUserPassword(userId: string, newPasswordHash: string): Observable<User> {
+    return from(
+      this.databaseService.updateItem<User>(this.USER_STORE, userId, {
+        passwordHash: newPasswordHash,
+      })
+    );
+  }
+
+  /**
+   * پاک کردن توکن بازنشانی از اطلاعات کاربر
+   */
+  private clearUserResetToken(userId: string): Observable<User> {
+    return from(
+      this.databaseService.updateItem<User>(this.USER_STORE, userId, {
+        resetToken: undefined,
+        resetTokenExpiry: undefined,
+      })
+    );
+  }
+
+  /**
+   * تولید توکن بازنشانی رمز عبور
+   */
+  private generateResetToken(): string {
+    // تولید یک توکن تصادفی و امن
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
+    return Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * اعتبارسنجی داده‌های بازنشانی رمز عبور
+   */
+  private validateResetPasswordData(data: ResetPasswordRequest): ValidationResult {
+    // بررسی حداقل طول رمز عبور
+    if (data.newPassword.length < 6) {
+      return {
+        valid: false,
+        message: 'رمز عبور باید حداقل 6 کاراکتر باشد'
+      };
+    }
+
+    // بررسی تطابق رمز عبور و تأیید آن
+    if (data.newPassword !== data.confirmPassword) {
+      return {
+        valid: false,
+        message: 'رمز عبور و تأیید آن یکسان نیستند'
+      };
+    }
+
+    // بررسی وجود توکن
+    if (!data.resetToken || data.resetToken.trim().length === 0) {
+      return {
+        valid: false,
+        message: 'توکن بازنشانی نامعتبر است'
+      };
+    }
+
+    return {
+      valid: true,
+      message: 'داده‌ها معتبر هستند'
+    };
   }
 }

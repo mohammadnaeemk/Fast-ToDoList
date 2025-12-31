@@ -102,7 +102,7 @@
       <!-- فرم -->
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-8">
         <!-- Step 1: اطلاعات شخصی -->
-        <div *ngIf="currentStep === 1" class="space-y-6 animate-fade-in">
+        <div formGroupName="personalInfo" *ngIf="currentStep === 1" class="space-y-6 animate-fade-in">
           <!-- نام کاربری -->
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-300">
@@ -113,13 +113,12 @@
               <input
                 type="text"
                 formControlName="userName"
-                [formControl]="userName"
                 placeholder="نام کاربری خود را وارد کنید"
-                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
                 [class.border-blue-500]="userName?.valid && userName?.touched"
                 [class.border-red-500]="userName?.invalid && userName?.touched"
               />
-              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <mat-icon class="absolute right-3 top-3 transform -translate-y-1/2 text-gray-400">
                 badge
               </mat-icon>
               <div
@@ -148,14 +147,12 @@
               <input
                 type="email"
                 formControlName="email"
-                [formControl]="email"
                 placeholder="example@email.com"
-                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
                 [class.border-blue-500]="email?.valid && email?.touched"
                 [class.border-red-500]="email?.invalid && email?.touched"
-                (blur)="validateEmail()"
               />
-              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <mat-icon class="absolute right-3 top-3 transform -translate-y-1/2 text-gray-400">
                 email
               </mat-icon>
               <div
@@ -183,15 +180,13 @@
               <input
                 type="number"
                 formControlName="phoneNumber"
-                [formControl]="phoneNumber"
                 placeholder="09123456789"
-                appPersianInput
                 type="phone"
-                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
                 [class.border-blue-500]="phoneNumber?.valid && phoneNumber?.touched"
                 [class.border-red-500]="phoneNumber?.invalid && phoneNumber?.touched"
               />
-              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <mat-icon class="absolute right-3 top-3 transform -translate-y-1/2 text-gray-400">
                 phone
               </mat-icon>
             </div>
@@ -220,7 +215,7 @@
         </div>
 
         <!-- Step 2: رمز عبور -->
-        <div *ngIf="currentStep === 2" class="space-y-6 animate-fade-in">
+        <div formGroupName="securityInfo" *ngIf="currentStep === 2" class="space-y-6 animate-fade-in">
           <!-- رمز عبور -->
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-300">
@@ -233,11 +228,11 @@
                 formControlName="password"
                 placeholder="حداقل ۶ کاراکتر با ترکیب حروف و اعداد"
                 appPasswordStrength
-                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
                 [class.border-blue-500]="password?.valid && password?.touched"
                 [class.border-red-500]="password?.invalid && password?.touched"
               />
-              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <mat-icon class="absolute right-3 top-3 transform -translate-y-1/2 text-gray-400">
                 lock
               </mat-icon>
               <button
@@ -308,13 +303,12 @@
               <input
                 [type]="showConfirmPassword ? 'text' : 'password'"
                 formControlName="confirmPassword"
-                [formControl]="confirmPassword"
                 placeholder="تکرار رمز عبور"
-                class="w-full px-4 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
+                class="w-full px-12 py-3.5 pe-12 bg-white/5 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-right"
                 [class.border-blue-500]="confirmPassword?.valid && confirmPassword?.touched"
                 [class.border-red-500]="confirmPassword?.invalid && confirmPassword?.touched"
               />
-              <mat-icon class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <mat-icon class="absolute right-3 top-3 transform -translate-y-1/2 text-gray-400">
                 lock_reset
               </mat-icon>
               <button
@@ -347,52 +341,51 @@
               {{ getErrorMessage(confirmPassword) }}
             </div>
           </div>
+        </div>
+        <!-- شرایط و ضوابط (خارج از securityInfo چون در سطح ریشه‌ای فرم است) -->
+        <div *ngIf="currentStep === 2" class="pt-4 space-y-4">
+          <div class="bg-white/5 rounded-xl p-4 border border-gray-700">
+            <label class="flex items-start space-x-3 space-x-reverse cursor-pointer group">
+              <input
+                type="checkbox"
+                formControlName="acceptTerms"
+                class="mt-1 w-5 h-5 rounded border-gray-600 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+              />
+              <div class="flex-1">
+                <span class="text-gray-300 group-hover:text-white transition-colors">
+                  با شرایط و ضوابط موافقت می‌کنم
+                </span>
+                <p class="text-gray-400 text-sm mt-2 leading-relaxed">
+                  با ایجاد حساب کاربری، با
+                  <a
+                    href="#"
+                    class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                    >قوانین استفاده</a
+                  >،
+                  <a
+                    href="#"
+                    class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                    >حریم خصوصی</a
+                  >
+                  و
+                  <a
+                    href="#"
+                    class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                    >سیاست بازگشت وجه</a
+                  >
+                  موافقت می‌کنم. اطلاعات شخصی شما با امنیت کامل ذخیره می‌شود.
+                </p>
+              </div>
+            </label>
+          </div>
 
-          <!-- شرایط و ضوابط -->
-          <div class="pt-4 space-y-4">
-            <div class="bg-white/5 rounded-xl p-4 border border-gray-700">
-              <label class="flex items-start space-x-3 space-x-reverse cursor-pointer group">
-                <input
-                  type="checkbox"
-                  formControlName="acceptTerms"
-                  class="mt-1 w-5 h-5 rounded border-gray-600 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
-                />
-                <div class="flex-1">
-                  <span class="text-gray-300 group-hover:text-white transition-colors">
-                    با شرایط و ضوابط موافقت می‌کنم
-                  </span>
-                  <p class="text-gray-400 text-sm mt-2 leading-relaxed">
-                    با ایجاد حساب کاربری، با
-                    <a
-                      href="#"
-                      class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
-                      >قوانین استفاده</a
-                    >،
-                    <a
-                      href="#"
-                      class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
-                      >حریم خصوصی</a
-                    >
-                    و
-                    <a
-                      href="#"
-                      class="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
-                      >سیاست بازگشت وجه</a
-                    >
-                    موافقت می‌کنم. اطلاعات شخصی شما با امنیت کامل ذخیره می‌شود.
-                  </p>
-                </div>
-              </label>
-            </div>
-
-            <div
-              *ngIf="
-                registerForm.get('acceptTerms')?.invalid && registerForm.get('acceptTerms')?.touched
-              "
-              class="text-red-400 text-sm animate-pulse text-right"
-            >
-              برای ادامه باید شرایط و ضوابط را بپذیرید
-            </div>
+          <div
+            *ngIf="
+              registerForm.get('acceptTerms')?.invalid && registerForm.get('acceptTerms')?.touched
+            "
+            class="text-red-400 text-sm animate-pulse text-right"
+          >
+            برای ادامه باید شرایط و ضوابط را بپذیرید
           </div>
 
           <!-- دکمه‌های ناوبری -->

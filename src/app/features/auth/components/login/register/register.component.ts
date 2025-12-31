@@ -28,30 +28,26 @@ import { ValidationMessageDirective } from '../../../../../shared/directives/val
 import { PasswordStrengthDirective } from '../../../../../shared/directives/password-strength.directive';
 import { RegisterRequest } from '../../../../../shared/models/auth.models';
 
-// ولیداتور سفارشی برای تطابق رمز عبور
 // ولیداتور سفارشی برای تطابق رمز عبور - نسخه اصلاح شده
 function passwordMatchValidator(): ValidatorFn {
   return (formGroup: AbstractControl): ValidationErrors | null => {
     const password = formGroup.get('password');
     const confirmPassword = formGroup.get('confirmPassword');
 
-    // اگر هر دو کنترل وجود ندارند یا هنوز مقادیر ندارند
     if (!password || !confirmPassword) {
       return null;
     }
 
-    // فقط اگر هر دو مقدار دارند، بررسی تطابق انجام شود
-    if (password.value && confirmPassword.value) {
-      if (password.value !== confirmPassword.value) {
-        confirmPassword.setErrors({ passwordMismatch: true });
-        return { passwordMismatch: true };
-      } else {
-        // اگر تطابق دارند، خطای قبلی را پاک کنید
-        if (confirmPassword.errors?.['passwordMismatch']) {
-          const errors = { ...confirmPassword.errors };
-          delete errors['passwordMismatch'];
-          confirmPassword.setErrors(Object.keys(errors).length ? errors : null);
-        }
+    // بررسی تطابق رمز عبور
+    if (password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    } else {
+      // پاک کردن خطای تطابق اگر وجود داشت
+      if (confirmPassword.hasError('passwordMismatch')) {
+        const errors = { ...confirmPassword.errors };
+        delete errors['passwordMismatch'];
+        confirmPassword.setErrors(Object.keys(errors).length ? errors : null);
       }
     }
 
@@ -101,52 +97,54 @@ export class RegisterComponent implements OnInit {
     { icon: '✅', bottom: '30%', right: '25%', delay: '4s' }
   ];
 
-  // قوانین
-  termsAccepted = false;
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private utilityService: UtilityService,
+    private router: Router,
+    private toast: HotToastService
+  ) {
+    this.registerForm = this.fb.group({
+      // Step 1: اطلاعات شخصی
+      personalInfo: this.fb.group({
+        userName: ['', [
+          Validators.required,
+          Validators.minLength(3),
+          Validators.maxLength(30),
+          Validators.pattern(/^[a-zA-Zآ-ی0-9_.]+$/)
+        ]],
+        email: ['', [
+          Validators.required,
+          Validators.email
+        ]],
+        phoneNumber: ['', [
+          Validators.pattern(/^(09\d{9}|9\d{9}|0\d{2,}\d{7,})$/)
+        ]]
+      }),
 
-constructor(
-  private fb: FormBuilder,
-  private authService: AuthService,
-  private utilityService: UtilityService,
-  private router: Router,
-  private toast: HotToastService
-) {
-  this.registerForm = this.fb.group({
-    // Step 1: اطلاعات شخصی
-    personalInfo: this.fb.group({
-      userName: ['', [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(30),
-        Validators.pattern(/^[a-zA-Zآ-ی0-9_.]+$/)
-      ]],
-      email: ['', [
-        Validators.required,
-        Validators.email
-      ]],
-      phoneNumber: ['', [
-        Validators.pattern(/^(09[0-9]{9}|9[0-9]{9}|0[0-9]{2,}[0-9]{7,})$/)
-      ]]
-    }),
+      // Step 2: رمز عبور
+      securityInfo: this.fb.group({
+        password: ['', [
+          Validators.required,
+          Validators.minLength(6),
+          this.passwordStrengthValidator
+        ]],
+        confirmPassword: ['', [Validators.required]]
+      }, { validators: passwordMatchValidator() }),
 
-    // Step 2: رمز عبور
-    securityInfo: this.fb.group({
-      password: ['', [
-        Validators.required,
-        Validators.minLength(6),
-        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
-      ]],
-      confirmPassword: ['', [Validators.required]]
-    }, { validators: passwordMatchValidator() }), // بدون پارامتر
-
-    // شرایط و ضوابط
-    acceptTerms: [false, [Validators.requiredTrue]]
-  });
-}
+      // شرایط و ضوابط
+      acceptTerms: [false, [Validators.requiredTrue]]
+    });
+  }
 
   ngOnInit(): void {
     this.checkScreenSize();
     this.generateParticles();
+    
+    // مشاهده تغییرات رمز عبور برای اعتبارسنجی مجدد تطابق
+    this.password?.valueChanges.subscribe(() => {
+      this.confirmPassword?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+    });
   }
 
   @HostListener('window:resize')
@@ -159,6 +157,7 @@ constructor(
   }
 
   private generateParticles(): void {
+    this.particles = [];
     for (let i = 0; i < 20; i++) {
       this.particles.push({
         size: Math.random() * 4 + 1,
@@ -179,32 +178,38 @@ constructor(
   }
 
   get userName(): FormControl {
-  return this.personalInfo.get('userName') as FormControl;
-}
+    return this.personalInfo.get('userName') as FormControl;
+  }
 
-get email(): FormControl {
-  return this.personalInfo.get('email') as FormControl;
-}
+  get email(): FormControl {
+    return this.personalInfo.get('email') as FormControl;
+  }
 
-get phoneNumber(): FormControl {
-  return this.personalInfo.get('phoneNumber') as FormControl;
-}
+  get phoneNumber(): FormControl {
+    return this.personalInfo.get('phoneNumber') as FormControl;
+  }
 
-get password(): FormControl {
-  return this.securityInfo.get('password') as FormControl;
-}
+  get password(): FormControl {
+    return this.securityInfo.get('password') as FormControl;
+  }
 
-get confirmPassword(): FormControl {
-  return this.securityInfo.get('confirmPassword') as FormControl;
-}
+  get confirmPassword(): FormControl {
+    return this.securityInfo.get('confirmPassword') as FormControl;
+  }
 
-get acceptTerms(): FormControl {
-  return this.registerForm.get('acceptTerms') as FormControl;
-}
+  get acceptTerms(): FormControl {
+    return this.registerForm.get('acceptTerms') as FormControl;
+  }
+
   // مدیریت مراحل
   nextStep(): void {
-    if (this.currentStep === 1 && this.personalInfo.valid) {
-      this.currentStep++;
+    if (this.currentStep === 1) {
+      this.personalInfo.markAllAsTouched();
+      if (this.personalInfo.valid) {
+        this.currentStep++;
+      } else {
+        this.toast.warning('لطفاً تمام فیلدهای مرحله اول را به درستی پر کنید');
+      }
     }
   }
 
@@ -216,8 +221,11 @@ get acceptTerms(): FormControl {
 
   // ارسال فرم
   onSubmit(): void {
+    // بررسی اعتبار فرم
+    this.markFormGroupTouched(this.registerForm);
+    
     if (this.registerForm.invalid) {
-      this.markFormGroupTouched(this.registerForm);
+      this.scrollToFirstInvalidControl();
       return;
     }
 
@@ -230,29 +238,38 @@ get acceptTerms(): FormControl {
 
     const formData = this.registerForm.value;
     const registerData: RegisterRequest = {
-      userName: formData.personalInfo.userName,
-      email: formData.personalInfo.email,
-      phoneNumber: formData.personalInfo.phoneNumber,
+      userName: formData.personalInfo.userName.trim(),
+      email: formData.personalInfo.email.toLowerCase().trim(),
+      phoneNumber: formData.personalInfo.phoneNumber || null,
       password: formData.securityInfo.password,
       confirmPassword: formData.securityInfo.confirmPassword
     };
+
+    // اعتبارسنجی اضافی
+    if (registerData.password !== registerData.confirmPassword) {
+      this.toast.error('رمز عبور و تأیید آن مطابقت ندارند');
+      this.isLoading = false;
+      return;
+    }
 
     this.authService.register(registerData).subscribe({
       next: (response) => {
         this.isLoading = false;
         
         if (response.success) {
-          this.toast.success(response.message, {
+          this.toast.success(response.message || 'ثبت‌نام با موفقیت انجام شد', {
             icon: '🎉',
             duration: 3000,
             position: 'top-center'
           });
           
+          // هدایت به صفحه todos یا login
           setTimeout(() => {
             this.router.navigate(['/todos']);
           }, 1500);
+
         } else {
-          this.toast.error(response.message, {
+          this.toast.error(response.message || 'خطا در ثبت‌نام', {
             icon: '⚠️',
             duration: 4000
           });
@@ -260,11 +277,25 @@ get acceptTerms(): FormControl {
       },
       error: (error) => {
         this.isLoading = false;
-        this.toast.error('خطا در ثبت‌نام', {
+        
+        // مدیریت خطاهای مختلف
+        let errorMessage = 'خطا در ثبت‌نام';
+        if (error.status === 409) {
+          errorMessage = 'نام کاربری یا ایمیل قبلاً ثبت شده است';
+        } else if (error.status === 400) {
+          errorMessage = 'داده‌های ارسالی معتبر نیستند';
+        } else if (error.status === 0) {
+          errorMessage = 'اتصال به سرور برقرار نیست';
+        }
+        
+        this.toast.error(errorMessage, {
           icon: '❌',
           duration: 4000
         });
         console.error('Register error:', error);
+      },
+      complete: () => {
+        this.isLoading = false;
       }
     });
   }
@@ -279,12 +310,51 @@ get acceptTerms(): FormControl {
     });
   }
 
+  // اسکرول به اولین کنترل نامعتبر
+  private scrollToFirstInvalidControl(): void {
+    const firstInvalidControl = document.querySelector('.ng-invalid');
+    if (firstInvalidControl) {
+      firstInvalidControl.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }
+  }
+
   togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
     if (field === 'password') {
       this.showPassword = !this.showPassword;
     } else {
       this.showConfirmPassword = !this.showConfirmPassword;
     }
+  }
+
+  // ولیداتور قدرت رمز عبور
+  private passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.value;
+    if (!password) return null;
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isValidLength = password.length >= 8;
+
+    if (!isValidLength) {
+      return { weakPassword: 'رمز عبور باید حداقل ۸ کاراکتر باشد' };
+    }
+
+    let strength = 0;
+    if (hasUpperCase) strength++;
+    if (hasLowerCase) strength++;
+    if (hasNumbers) strength++;
+    if (hasSpecialChars) strength++;
+
+    if (strength < 3) {
+      return { weakPassword: 'رمز عبور باید شامل حروف بزرگ، کوچک و اعداد باشد' };
+    }
+
+    return null;
   }
 
   // پیام‌های خطای سفارشی
@@ -300,47 +370,41 @@ get acceptTerms(): FormControl {
     if (errors['pattern']) {
       if (control === this.userName) return 'فقط حروف، اعداد و آندرلاین مجاز است';
       if (control === this.phoneNumber) return 'شماره تلفن معتبر نیست';
-      if (control === this.password) return 'رمز عبور باید شامل حروف بزرگ، کوچک و اعداد باشد';
     }
+    if (errors['weakPassword']) return errors['weakPassword'];
     if (errors['passwordMismatch']) return 'رمز عبور و تأیید آن یکسان نیستند';
 
     return 'مقدار وارد شده معتبر نیست';
   }
 
-  // محاسبه قدرت رمز عبور
+  // محاسبه قدرت رمز عبور برای نمایش بصری
   getPasswordStrength(password: string): { strength: string; percentage: number } {
     if (!password) return { strength: 'ضعیف', percentage: 0 };
 
     let score = 0;
     const checks = [
-      /.{8,}/.test(password),        // طول
-      /[a-z]/.test(password),        // حروف کوچک
-      /[A-Z]/.test(password),        // حروف بزرگ
-      /\d/.test(password),           // اعداد
-      /[!@#$%^&*(),.?":{}|<>]/.test(password) // علائم ویژه
+      password.length >= 8,
+      /[a-z]/.test(password),
+      /[A-Z]/.test(password),
+      /\d/.test(password),
+      /[!@#$%^&*(),.?":{}|<>]/.test(password)
     ];
 
     score = checks.filter(Boolean).length;
 
     if (score >= 4) return { strength: 'قوی', percentage: 100 };
     if (score >= 3) return { strength: 'متوسط', percentage: 66 };
-    return { strength: 'ضعیف', percentage: 33 };
+    if (score >= 2) return { strength: 'ضعیف', percentage: 33 };
+    return { strength: 'خیلی ضعیف', percentage: 10 };
   }
 
-  // اعتبارسنجی ایمیل
-  validateEmail(): void {
-    if (this.email?.valid) {
-      // در حالت واقعی چک می‌کنیم ایمیل تکراری نباشه
-      this.toast.info('ایمیل معتبر است', { duration: 2000 });
+  getStrengthColor(strength: string): string {
+    switch (strength) {
+      case 'قوی': return '#10b981'; // سبز
+      case 'متوسط': return '#f59e0b'; // نارنجی
+      case 'ضعیف': return '#ef4444'; // قرمز
+      case 'خیلی ضعیف': return '#dc2626'; // قرمز تیره
+      default: return '#6b7280'; // خاکستری
     }
   }
-  getStrengthColor(strength: string): string {
-  switch (strength) {
-    case 'قوی': return '#10b981'; // سبز
-    case 'متوسط': return '#f59e0b'; // نارنجی
-    case 'ضعیف': return '#ef4444'; // قرمز
-    default: return '#6b7280'; // خاکستری
-  }
-}
-  
 }

@@ -1,3 +1,6 @@
+/**
+ * رابط کاربر در سیستم
+ */
 export interface User {
   id: string;
   userName: string;
@@ -8,52 +11,22 @@ export interface User {
   lastLogin?: Date;
   avatar?: string;
   loginMethods: ('email' | 'phone' | 'username')[];
+  resetToken?: string;      // توکن برای بازنشانی رمز عبور
+  resetTokenExpiry?: Date;  // تاریخ انقضای توکن
 }
 
-export interface RegisterRequest {
-  userName?: string;
-  email?: string;
-  phoneNumber?: string;
-  password: string;
-  confirmPassword: string;  // برای تأیید رمز عبور
-}
-
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  user?: {
-    id: string;
-    userName: string;
-    email?: string;
-    phoneNumber?: string;
-    avatar?: string;
-  };
-  token?: string;        // توکن دسترسی
-  sessionId?: string;    // شناسه session
-}
-
-export interface TokenPayload {
-  userId: string;
-  email?: string;
-  userName?: string;
-  phoneNumber?: string;
-  iat: number;  // تاریخ ایجاد (بر حسب ثانیه)
-  exp: number;  // تاریخ انقضا (بر حسب ثانیه)
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  message?: string;
-}
-
-// درخواست ورود کاربر
+/**
+ * درخواست ورود کاربر
+ */
 export interface LoginRequest {
   identifier: string;    // می‌تونه email، phoneNumber یا userName باشه
   password: string;
   rememberMe?: boolean;  // true = session 30 روزه، false = session 24 ساعته
 }
 
-// درخواست ثبت‌نام کاربر جدید
+/**
+ * درخواست ثبت‌نام کاربر جدید
+ */
 export interface RegisterRequest {
   userName?: string;     // نام کاربری (اختیاری)
   email?: string;        // ایمیل (اختیاری)
@@ -62,7 +35,9 @@ export interface RegisterRequest {
   confirmPassword: string;  // تکرار رمز عبور
 }
 
-// پاسخ سیستم به عملیات احراز هویت
+/**
+ * پاسخ سیستم به عملیات احراز هویت
+ */
 export interface AuthResponse {
   success: boolean;      // آیا عملیات موفق بود؟
   message: string;       // پیام برای کاربر
@@ -77,7 +52,9 @@ export interface AuthResponse {
   sessionId?: string;    // شناسه session (اگر موفق بود)
 }
 
-// اطلاعات داخل توکن JWT
+/**
+ * اطلاعات داخل توکن JWT
+ */
 export interface TokenPayload {
   userId: string;        // شناسه کاربر
   email?: string;        // ایمیل کاربر
@@ -87,13 +64,17 @@ export interface TokenPayload {
   exp: number;          // تاریخ انقضا (ثانیه از epoch)
 }
 
-// نتیجه اعتبارسنجی
+/**
+ * نتیجه اعتبارسنجی
+ */
 export interface ValidationResult {
   valid: boolean;        // آیا معتبر است؟
   message?: string;      // پیام خطا یا موفقیت
 }
 
-// اطلاعات کاربر برای نمایش عمومی
+/**
+ * اطلاعات کاربر برای نمایش عمومی
+ */
 export interface PublicUserInfo {
   id: string;
   userName: string;
@@ -101,4 +82,29 @@ export interface PublicUserInfo {
   phoneNumber?: string;
   avatar?: string;
   createdAt?: Date;
+}
+
+/**
+ * درخواست فراموشی رمز عبور
+ */
+export interface ForgotPasswordRequest {
+  identifier: string;  // می‌تونه email، phoneNumber یا userName باشه
+}
+
+/**
+ * پاسخ درخواست فراموشی رمز عبور
+ */
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+  resetToken?: string;  // توکن برای تغییر رمز عبور
+}
+
+/**
+ * درخواست تغییر رمز عبور
+ */
+export interface ResetPasswordRequest {
+  resetToken: string;      // توکن دریافتی از مرحله قبل
+  newPassword: string;     // رمز عبور جدید
+  confirmPassword: string; // تأیید رمز عبور جدید
 }

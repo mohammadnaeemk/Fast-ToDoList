@@ -1,3 +1,4 @@
+import { T } from '@angular/cdk/keycodes';
 import { Injectable } from '@angular/core';
 import { catchError, from, Observable } from 'rxjs';
 
@@ -96,42 +97,233 @@ export class DataBaseService {
       filesStore.createIndex('name', 'name');
     }
   }
-  addItem<T>(storeName: string, item: T): Observable<T & { id: string }> {
-    return from(
-      this.initialize().then((db) => {
-        return new Promise<T & { id: string }>((resolve, reject) => {
-          const transaction = db.transaction(storeName, 'readwrite');
-          const store = transaction.objectStore(storeName);
+addItem<T>(storeName: string, item: T): Observable<T & { id: string }> {
+  return from(
+    this.initialize().then((db) => {
+      return new Promise<T & { id: string }>((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
 
-          const itemWithId = {
-            ...item,
-            id: (item as any).id || this.generateId(),
-          } as T & { id: string };
+        const itemWithId = {
+          ...item,
+          id: (item as any).id || this.generateId(),
+        } as T & { id: string };
 
-          const request = store.add(itemWithId);
-
-          request.onsuccess = () => {
-            resolve(itemWithId);
-          };
-
-          request.onerror = (event) => {
-            const error = (event.target as IDBRequest).error;
-            if (error?.name === 'ConstraintError') {
-              reject(new Error('این آیتم قبلاً ذخیره شده است'));
-            } else {
-              reject(new Error(`خطا در ذخیره: ${error?.message || 'خطای ناشناخته'}`));
+        // قبل از اضافه کردن، بررسی کن که مقادیر unique تکراری نباشند
+        this.checkForDuplicateUniqueFields(store, storeName, itemWithId)
+          .then((duplicateError) => {
+            if (duplicateError) {
+              reject(duplicateError);
+              return;
             }
-          };
-        });
-      })
-    ).pipe(
-      catchError((error) => {
-        console.error('خطا در اضافه کردن آیتم:', error);
-        throw error;
-      })
-    );
-  }
 
+            // اگر تکراری نبود، اضافه کن
+            const request = store.add(itemWithId);
+
+            request.onsuccess = () => {
+              resolve(itemWithId);
+            };
+
+            request.onerror = (event) => {
+              const error = (event.target as IDBRequest).error;
+              reject(new Error(`خطا در ذخیره: ${error?.message || 'خطای ناشناخته'}`));
+            };
+          })
+          .catch((error) => {
+            reject(error);
+          });
+      });
+    })
+  ).pipe(
+    catchError((error) => {
+      console.error('خطا در اضافه کردن آیتم:', error);
+      throw error;
+    })
+  );
+}
+private async checkForDuplicateUniqueFields(
+  store: IDBObjectStore, 
+  storeName: string, 
+  item: any
+): Promise<Error | null> {
+  return new Promise((resolve) => {
+    // برای هر store، فیلدهای unique مخصوص خودش را بررسی کن
+    if (storeName === 'users') {
+      // بررسی ایمیل تکراری
+      if (item.email) {
+        const emailIndex = store.index('email');
+        const emailRequest = emailIndex.get(item.email);
+        
+        emailRequest.onsuccess = () => {
+          if (emailRequest.result) {
+            resolve(new Error('ایمیل وارد شده قبلاً ثبت‌نام کرده است'));
+            return;
+          }
+          
+          // بررسی نام کاربری تکراری
+          if (item.userName) {
+            const userNameIndex = store.index('userName');
+            const userNameRequest = userNameIndex.get(item.userName);
+            
+            userNameRequest.onsuccess = () => {
+              if (userNameRequest.result) {
+                resolve(new Error('نام کاربری وارد شده قبلاً ثبت‌نام کرده است'));
+                return;
+              }
+              
+              // بررسی شماره تلفن تکراری
+              if (item.phonNumber) {
+                const phoneIndex = store.index('phonNumber');
+                const phoneRequest = phoneIndex.get(item.phonNumber);
+                
+                phoneRequest.onsuccess = () => {
+                  if (phoneRequest.result) {
+                    resolve(new Error('شماره تلفن وارد شده قبلاً ثبت‌نام کرده است'));
+                  } else {
+                    resolve(null); // همه چیز درست است
+                  }
+                };
+                
+                phoneRequest.onerror = () => resolve(null);
+              } else {
+                resolve(null);
+              }
+            };
+            
+            userNameRequest.onerror = () => resolve(null);
+          } else if (item.phonNumber) {
+            // فقط شماره تلفن داریم
+            const phoneIndex = store.index('phonNumber');
+            const phoneRequest = phoneIndex.get(item.phonNumber);
+            
+            phoneRequest.onsuccess = () => {
+              if (phoneRequest.result) {
+                resolve(new Error('شماره تلفن وارد شده قبلاً ثبت‌نام کرده است'));
+              } else {
+                resolve(null);
+              }
+            };
+            
+            phoneRequest.onerror = () => resolve(null);
+          } else {
+            resolve(null);
+          }
+        };
+        
+        emailRequest.onerror = () => resolve(null);
+      } else if (item.userName) {
+        // فقط نام کاربری داریم
+        const userNameIndex = store.index('userName');
+        const userNameRequest = userNameIndex.get(item.userName);
+        
+        userNameRequest.onsuccess = () => {
+          if (userNameRequest.result) {
+            resolve(new Error('نام کاربری وارد شده قبلاً ثبت‌نام کرده است'));
+          } else {
+            resolve(null);
+          }
+        };
+        
+        userNameRequest.onerror = () => resolve(null);
+      } else if (item.phonNumber) {
+        // فقط شماره تلفن داریم
+        const phoneIndex = store.index('phonNumber');
+        const phoneRequest = phoneIndex.get(item.phonNumber);
+        
+        phoneRequest.onsuccess = () => {
+          if (phoneRequest.result) {
+            resolve(new Error('شماره تلفن وارد شده قبلاً ثبت‌نام کرده است'));
+          } else {
+            resolve(null);
+          }
+        };
+        
+        phoneRequest.onerror = () => resolve(null);
+      } else {
+        resolve(null);
+      }
+    } else {
+      // برای stores دیگر
+      resolve(null);
+    }
+  });
+}
+clearDatabase(): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(this.dbName);
+    
+    request.onsuccess = () => {
+      console.log('دیتابیس با موفقیت پاک شد');
+      this.db = null;
+      this.isInitialized = false;
+      resolve(true);
+    };
+    
+    request.onerror = (event) => {
+      console.error('خطا در پاک کردن دیتابیس:', event);
+      reject(new Error('خطا در پاک کردن دیتابیس'));
+    };
+    
+    request.onblocked = () => {
+      console.warn('دیتابیس بلاک شده است. لطفاً همه تب‌ها را ببندید.');
+      reject(new Error('دیتابیس بلاک شده است'));
+    };
+  });
+}
+deleteUserByEmail(email: string): Promise<boolean> {
+  return this.initialize().then((db) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('users', 'readwrite');
+      const store = transaction.objectStore('users');
+      const emailIndex = store.index('email');
+      
+      const request = emailIndex.get(email);
+      
+      request.onsuccess = () => {
+        const user = request.result;
+        if (user) {
+          const deleteRequest = store.delete(user.id);
+          
+          deleteRequest.onsuccess = () => {
+            console.log(`کاربر با ایمیل ${email} حذف شد`);
+            resolve(true);
+          };
+          
+          deleteRequest.onerror = () => {
+            reject(new Error('خطا در حذف کاربر'));
+          };
+        } else {
+          resolve(false); // کاربر یافت نشد
+        }
+      };
+      
+      request.onerror = () => {
+        reject(new Error('خطا در جستجوی کاربر'));
+      };
+    });
+  });
+}
+private handleConstraintError(
+  storeName: string, 
+  item: any, 
+  error: DOMException, 
+  reject: (reason: any) => void
+): void {
+  let errorMessage = 'این آیتم قبلاً ذخیره شده است';
+  
+  if (storeName === 'users') {
+    // بررسی کن کدام فیلد تکراری است
+    if (item.email) {
+      errorMessage = 'ایمیل وارد شده قبلاً ثبت‌نام کرده است';
+    } else if (item.phonNumber) {
+      errorMessage = 'شماره تلفن وارد شده قبلاً ثبت‌نام کرده است';
+    } else if (item.userName) {
+      errorMessage = 'نام کاربری وارد شده قبلاً ثبت‌نام کرده است';
+    }
+  }
+  
+  reject(new Error(errorMessage));
+}
   getAllItems<T>(storeName: string): Promise<T[]> {
     return this.initialize().then((db) => {
       return new Promise<T[]>((resolve, reject) => {
